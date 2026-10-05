@@ -34,6 +34,7 @@ class ProductBuilder
     private const BASE_ATTRIBUTES = [
         'name', 'description', 'short_description', 'url_key', 'image', 'small_image', 'status', 'visibility',
         'price', 'special_price', 'special_from_date', 'special_to_date', 'tax_class_id', 'price_type', 'price_view',
+        'links_purchased_separately',
     ];
 
     private const QTY_TYPES = ['simple', 'virtual', 'downloadable'];

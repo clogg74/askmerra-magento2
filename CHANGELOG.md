@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.0.2 - 2026-10-05
+
+Found by testing on fresh Magento 2.4.9 stores with Luma and with Hyvä 1.5:
+
+- Changes go out in the same cron minute: a queue run first applies the pending entries of the
+  "AskMerra product sync" change log, and `askmerra:sync` right after an edit sends it.
+- Orders: a product bought from a grouped product is reported under the grouped product (id and
+  name), which AskMerra knows (its parts are usually not shown on their own).
+- A store view that stops publishing a feed (switched back to the Push API, or AskMerra turned off
+  for it) takes its file offline within a minute; `askmerra:feed:generate` also removes files no
+  store view publishes when none sends a feed.
+- Downloadable products whose links are bought separately are sent with the price of the cheapest
+  link (they had no price).
+- The module's log lines go to var/log/askmerra.log only, no longer also to system.log and
+  debug.log.
+- Add to cart from the chat refuses products that are not shown on their own (a configurable's
+  variant).
+- Hyvä: the form key comes from Hyvä's own helper.
+- The `askmerra:cart-added` event's detail carries `cartQty` (the items in the cart after the add)
+  instead of the misleading `qty`.
+- PHP 8.5 is supported.
+- The consent setting explains that "Automatic" needs Google Consent Mode on the site.
+
 ## 1.0.1 - 2026-10-05
 
 Sync fixes (found while building the WooCommerce connector; the database gets one column and one

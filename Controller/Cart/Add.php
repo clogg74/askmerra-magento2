@@ -148,8 +148,11 @@ class Add implements HttpPostActionInterface, CsrfAwareActionInterface
 
         $websiteId = (int) $this->storeManager->getStore($storeId)->getWebsiteId();
 
+        // Only products shown on their own: a configurable's variant or a grouped product's part is
+        // not a product AskMerra has (the chat sends the product it shows).
         if (!$product instanceof Product
             || (int) $product->getStatus() !== Product\Attribute\Source\Status::STATUS_ENABLED
+            || !$product->isVisibleInSiteVisibility()
             || !in_array($websiteId, array_map('intval', (array) $product->getWebsiteIds()), true)
         ) {
             return null;

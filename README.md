@@ -23,7 +23,8 @@ answers shoppers' questions and recommends products from your catalog.
 
 ## Requirements
 
-- Magento Open Source / Adobe Commerce 2.4.4 or later, PHP 8.1 - 8.4
+- Magento Open Source / Adobe Commerce 2.4.4 or later, PHP 8.1 - 8.5 (tested on 2.4.7-p4 with ScandiPWA on
+  PHP 8.3, and 2.4.9 with Luma on PHP 8.4 and with Hyvä 1.5 on PHP 8.5)
 - Magento cron running every minute (`bin/magento cron:run`)
 - An AskMerra shop with its keys (AskMerra dashboard > API keys): the **secret key** (`sk_live_...`)
   for the Push API, the **site key** (`pk_live_...`) for the widget
@@ -189,7 +190,7 @@ All settings are per store view unless marked *global*.
 | | Know the product being viewed | Product pages tell the assistant which product the shopper is looking at |
 | | Add to cart from the chat / After adding to cart | Into the Magento cart; products with options open their page |
 | | Report orders to AskMerra | Order number, total and products - no name, e-mail or address |
-| | Analytics consent | Automatic (Google Consent Mode / Tag Manager), Magento cookie notice, Not needed, Manual |
+| | Analytics consent | Automatic (Google Consent Mode / Tag Manager), Magento cookie notice, Not needed, Manual. Without Google Consent Mode on the site, Automatic never gets consent and no order is reported: choose another mode |
 | Advanced | API URL | Only for an AskMerra test environment |
 | | Request timeout, Debug log | *global*; the debug log writes every request to `var/log/askmerra.log` |
 
@@ -239,7 +240,8 @@ the checkout page unless asked for; other one-step checkouts can be added in `et
 - **Add to cart** - `POST /askmerra/cart/add` with the form key. Simple and virtual products go into
   the cart (the mini cart refreshes: Luma customer data, Hyvä `reload-customer-section-data`);
   products with options, out of stock or with required custom options open their page.
-  `document` receives an `askmerra:cart-added` event for themes that open a cart drawer.
+  `document` receives an `askmerra:cart-added` event for themes that open a cart drawer, with
+  `detail: {externalId, sku, name, cartQty}` (`cartQty`: the items in the cart after the add).
 - **Orders** - on the success page the order is passed to `AskMerra.trackPurchase()`; AskMerra sends
   it once the shopper's analytics consent allows it.
 - **Consent** - *Magento cookie notice* grants it when the shopper accepts the notice.

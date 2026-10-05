@@ -11,6 +11,7 @@ use AskMerra\Connector\Model\Config;
 use AskMerra\Connector\Model\Feed\FeedFlags;
 use AskMerra\Connector\Model\Log\Logger;
 use Magento\Framework\FlagManager;
+use Magento\Framework\Indexer\IndexerRegistry;
 use Magento\Framework\Lock\LockManagerInterface;
 
 /**
@@ -37,6 +38,9 @@ class QueueProcessor
 
     /** Seconds before a store view whose key was rejected is tried again. */
     private const AUTH_PAUSE = 600;
+
+    /** The indexer whose change log queues changed products ("Update by Schedule"). */
+    private const INDEXER = 'askmerra_products';
 
     /**
      * Outages in a row by store view (no answer, a timeout, a server error): the store view waits
@@ -68,6 +72,7 @@ class QueueProcessor
         private readonly Reconciler $reconciler,
         private readonly LockManagerInterface $lockManager,
         private readonly FlagManager $flagManager,
+        private readonly IndexerRegistry $indexerRegistry,
         private readonly Logger $logger
     ) {
     }
@@ -88,6 +93,7 @@ class QueueProcessor
             $deadline = microtime(true) + $seconds;
             $stats = [];
             $this->paused = [];
+            $this->applyChangeLog();
 
             foreach ($storeIds as $storeId) {
                 $this->reconciler->ensureSyncMethod((int) $storeId);
@@ -160,6 +166,24 @@ class QueueProcessor
         unset($payload['source_updated_at']);
 
         return sha1(self::encode($payload));
+    }
+
+    /**
+     * Queues the products the change log holds that Magento's indexer cron has not handled yet, so
+     * a change goes out in this run - not a minute later - and `askmerra:sync` right after an edit
+     * sends it. Nothing to do when the indexer is on "Update on Save" (products are queued as saved).
+     */
+    private function applyChangeLog(): void
+    {
+        try {
+            $indexer = $this->indexerRegistry->get(self::INDEXER);
+
+            if ($indexer->isScheduled()) {
+                $indexer->getView()->update();
+            }
+        } catch (\Throwable $e) {
+            $this->logger->error('Applying the product change log: ' . $e->getMessage(), ['exception' => $e]);
+        }
     }
 
     /** @return array{sent: int, unchanged: int, removed: int, failed: int}|null null: nothing was due */

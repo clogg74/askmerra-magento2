@@ -40,6 +40,14 @@ class PriceResolver
                 $finalValue = (float) $final->getAmount()->getValue();
                 $regularValue = (float) $regular->getAmount()->getValue();
             }
+
+            // A downloadable product whose links are bought separately costs at least its cheapest link.
+            $cheapestLink = $this->getCheapestLinkAmount($product);
+
+            if ($cheapestLink !== null) {
+                $finalValue += $cheapestLink;
+                $regularValue += $cheapestLink;
+            }
         } catch (\Throwable) {
             return ['price' => null, 'sale_price' => null];
         }
@@ -60,6 +68,23 @@ class PriceResolver
             // AskMerra shows a sale only below the regular price.
             'sale_price' => $finalValue > 0 && $finalValue < $regularValue - 0.004 ? $finalValue : null,
         ];
+    }
+
+    /** The cheapest link of a downloadable product whose links are bought separately, as a guest pays it. */
+    private function getCheapestLinkAmount(Product $product): ?float
+    {
+        if ($product->getTypeId() !== 'downloadable' || !$product->getData('links_purchased_separately')) {
+            return null;
+        }
+
+        $linkPrice = $product->getPriceInfo()->getPrice('link_price');
+        $links = $product->getTypeInstance()->getLinks($product);
+
+        if (!$links || !method_exists($linkPrice, 'getLinkAmount')) {
+            return null;
+        }
+
+        return min(array_map(static fn ($link): float => (float) $linkPrice->getLinkAmount($link)->getValue(), $links));
     }
 
     /** Base currency to the store view's default display currency, rounded to cents. */

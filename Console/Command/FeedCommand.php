@@ -39,6 +39,7 @@ class FeedCommand extends AbstractCommand
 
         if (!$storeIds) {
             $output->writeln('<comment>No store view sends its catalog as a feed ("How AskMerra gets the catalog": Product feed).</comment>');
+            $this->reportRemoved($output, $this->feedGenerator->removeUnusedFiles());
 
             return self::SUCCESS;
         }
@@ -65,12 +66,15 @@ class FeedCommand extends AbstractCommand
             $output->writeln('  ' . $this->feedGenerator->getUrl($storeId));
         }
 
-        $removed = $this->feedGenerator->removeUnusedFiles();
+        $this->reportRemoved($output, $this->feedGenerator->removeUnusedFiles());
 
+        return $failed ? self::FAILURE : self::SUCCESS;
+    }
+
+    private function reportRemoved(OutputInterface $output, int $removed): void
+    {
         if ($removed > 0) {
             $output->writeln(sprintf('%d feed files no store view publishes anymore were removed.', $removed));
         }
-
-        return $failed ? self::FAILURE : self::SUCCESS;
     }
 }

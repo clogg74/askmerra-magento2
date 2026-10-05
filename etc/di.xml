@@ -1,13 +1,11 @@
 <?xml version="1.0"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
-    <!-- var/log/askmerra.log -->
-    <type name="AskMerra\Connector\Model\Log\Logger">
+    <!-- Switching a store view back to the Push API removes its feed file at once (a proxy:
+         FeedGenerator itself needs the Reconciler, which needs the MethodTracker). -->
+    <type name="AskMerra\Connector\Model\Sync\MethodTracker">
         <arguments>
-            <argument name="name" xsi:type="string">askmerra</argument>
-            <argument name="handlers" xsi:type="array">
-                <item name="file" xsi:type="object">AskMerra\Connector\Model\Log\Handler</item>
-            </argument>
+            <argument name="feedGenerator" xsi:type="object">AskMerra\Connector\Model\Feed\FeedGenerator\Proxy</argument>
         </arguments>
     </type>
 

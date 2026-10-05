@@ -195,7 +195,7 @@
                 </field>
                 <field id="consent_mode" translate="label comment" type="select" sortOrder="80" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Analytics consent</label>
-                    <comment><![CDATA[Orders are reported only with the shopper's analytics consent. <strong>Automatic</strong>: read from Google Consent Mode / Google Tag Manager. <strong>Magento cookie notice</strong>: when the shopper accepts Magento's cookie notice. <strong>Not needed</strong>: no consent banner is required on this site. <strong>Manual</strong>: your cookie banner calls <code>AskMerra.setConsent({analytics: true})</code>.]]></comment>
+                    <comment><![CDATA[Orders are reported only with the shopper's analytics consent. <strong>Automatic</strong>: read from Google Consent Mode / Google Tag Manager. <strong>Magento cookie notice</strong>: when the shopper accepts Magento's cookie notice. <strong>Not needed</strong>: no consent banner is required on this site. <strong>Manual</strong>: your cookie banner calls <code>AskMerra.setConsent({analytics: true})</code>. Without Google Consent Mode on the site, <strong>Automatic</strong> never receives consent and no order is reported: choose another mode.]]></comment>
                     <source_model>AskMerra\Connector\Model\Config\Source\ConsentMode</source_model>
                 </field>
             </group>

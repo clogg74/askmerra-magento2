@@ -6,6 +6,7 @@ namespace AskMerra\Connector\Model\Sync;
 
 use AskMerra\Connector\Model\Config;
 use AskMerra\Connector\Model\Feed\FeedFlags;
+use AskMerra\Connector\Model\Feed\FeedGenerator;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Encryption\EncryptorInterface;
 use Magento\Framework\FlagManager;
@@ -19,7 +20,8 @@ use Magento\Store\Model\StoreManagerInterface;
  *
  * - The sync method: the whole catalog is sent again the new way. A feed needs every product's
  *   entry, and pushed products must not count on what an old feed delivered. A store view that
- *   switched to a feed does not publish it before it is complete.
+ *   switched to a feed does not publish it before it is complete; one that switched to the Push API
+ *   stops publishing its file at once (AskMerra would keep importing it over the pushed catalog).
  * - Where a store view pushes to (API URL and secret key, e.g. a test key replaced by the live
  *   one): the whole catalog is sent again, as the other AskMerra shop has none of it.
  * - Store settings every product shows (language, currencies, prices with or without tax, links):
@@ -64,7 +66,8 @@ class MethodTracker
         private readonly FlagManager $flagManager,
         private readonly EncryptorInterface $encryptor,
         private readonly ScopeConfigInterface $scopeConfig,
-        private readonly StoreManagerInterface $storeManager
+        private readonly StoreManagerInterface $storeManager,
+        private readonly FeedGenerator $feedGenerator
     ) {
     }
 
@@ -107,6 +110,10 @@ class MethodTracker
         }
 
         if ($switched) {
+            if (!$isFeed) {
+                $this->feedGenerator->deleteFiles($storeId);
+            }
+
             $current['rebuild'] = $isFeed ? self::REBUILD_FEED : self::REBUILD_CATALOG;
         } elseif ($moved || $changed) {
             $current['rebuild'] ??= self::REBUILD_CATALOG;

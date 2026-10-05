@@ -48,7 +48,7 @@ class Test extends Action implements HttpPostActionInterface
         $savedSecretKey = $this->config->getSecretKey($storeId);
 
         if ($apiUrl !== null && !preg_match('#^https?://#i', $apiUrl)) {
-            return $this->respond([['type' => 'error', 'text' => (string) __('The API URL must start with https://.')]]);
+            return $this->respond([['type' => 'error', 'text' => (string) __('The API URL must start with https:// (http:// only for a local test server).')]]);
         }
 
         $effectiveSecretKey = $secretKey ?? $savedSecretKey;

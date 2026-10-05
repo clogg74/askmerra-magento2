@@ -70,6 +70,11 @@
 
     /** Magento's form key, kept in a cookie by Magento's own scripts; created as they would. */
     function getFormKey() {
+        // Hyvä keeps (and creates) it itself.
+        if (window.hyva && typeof window.hyva.getFormKey === 'function') {
+            return window.hyva.getFormKey();
+        }
+
         var key = getCookie('form_key');
         var input;
 
@@ -80,7 +85,8 @@
 
         if (!key) {
             var chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-            var cookies = window.cookiesConfig || {};
+            // Luma's cookie settings, or Hyvä's.
+            var cookies = window.cookiesConfig || window.COOKIE_CONFIG || {};
 
             key = '';
 
@@ -196,7 +202,7 @@
             result = result || {};
 
             if (result.success) {
-                refreshCart({ externalId: externalId, sku: sku, name: result.name, qty: result.qty });
+                refreshCart({ externalId: externalId, sku: sku, name: result.name, cartQty: result.qty });
 
                 if (config.afterAdd === 'cart' && result.cartUrl) {
                     return open(result.cartUrl);

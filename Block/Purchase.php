@@ -48,7 +48,7 @@ class Purchase extends Template
         $items = [];
 
         foreach ($visibleItems as $item) {
-            $productId = (int) $item->getProductId();
+            $productId = $this->getAskMerraProductId($item);
             $qty = (float) $item->getQtyOrdered();
 
             if ($qty <= 0) {
@@ -62,7 +62,8 @@ class Purchase extends Template
 
             $items[] = [
                 'item_id' => $id,
-                'item_name' => (string) $item->getName(),
+                // A grouped product's part goes by the grouped product's name, like its id.
+                'item_name' => $productId === (int) $item->getProductId() ? (string) $item->getName() : $this->getName($productId, $storeId, (string) $item->getName()),
                 'price' => round(max(0.0, $paid) / $qty, 2),
                 'quantity' => (int) ceil($qty),
             ];
@@ -87,10 +88,33 @@ class Purchase extends Template
         );
     }
 
+    /**
+     * The product AskMerra knows for an order line: the line's product (a configurable's line carries
+     * the configurable), or the grouped product a product was bought from - its products are sold
+     * through it and are usually not sent on their own.
+     */
+    private function getAskMerraProductId(Order\Item $item): int
+    {
+        $grouped = $item->getProductOptionByCode('super_product_config');
+
+        if (is_array($grouped) && ($grouped['product_type'] ?? null) === 'grouped' && (int) ($grouped['product_id'] ?? 0) > 0) {
+            return (int) $grouped['product_id'];
+        }
+
+        return (int) $item->getProductId();
+    }
+
+    private function getName(int $productId, int $storeId, string $fallback): string
+    {
+        $name = $this->productResource->getAttributeRawValue($productId, 'name', $storeId);
+
+        return is_string($name) && $name !== '' ? $name : $fallback;
+    }
+
     /** @return array<int, string> product id => SKU of the product itself (not the chosen variant) */
     private function getSkus(array $items): array
     {
-        $ids = array_values(array_unique(array_map(static fn ($item) => (int) $item->getProductId(), $items)));
+        $ids = array_values(array_unique(array_map(fn ($item) => $this->getAskMerraProductId($item), $items)));
         $skus = [];
 
         foreach ($ids ? $this->productResource->getProductsSku($ids) : [] as $row) {
