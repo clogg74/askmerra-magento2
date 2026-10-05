@@ -30,11 +30,31 @@ answers shoppers' questions and recommends products from your catalog.
 
 ## Install
 
-The module is installed with Composer from its Git repository (replace the URL with the one of this
-repository, or use Private Packagist / Satis):
+The module is installed with Composer from its public GitHub repository. Add the repository and the
+install preference to the project's `composer.json` (merge them into the `repositories` and `config`
+sections it already has):
+
+```json
+"repositories": {
+    "askmerra": {
+        "type": "vcs",
+        "url": "https://github.com/clogg74/askmerra-magento2.git",
+        "no-api": true
+    }
+},
+"config": {
+    "preferred-install": {
+        "askmerra/*": "source",
+        "*": "dist"
+    }
+}
+```
+
+With `no-api` and the `source` preference, Composer clones the repository over HTTPS and never calls
+the GitHub API for it: servers need no GitHub token or SSH key, and API rate limits or an old token
+configured on the server do not get in the way.
 
 ```bash
-composer config repositories.askmerra vcs git@github.com:askmerra/magento2-connector.git
 composer require askmerra/magento2-connector:^1.0
 bin/magento module:enable AskMerra_Connector
 bin/magento setup:upgrade
@@ -43,7 +63,12 @@ bin/magento setup:static-content:deploy      # production mode
 bin/magento cache:flush
 ```
 
-Releases are Git tags (`v1.0.0`); Composer picks the versions from them.
+Releases are Git tags (`v1.0.0`); Composer picks the versions from them. Updating:
+`composer update askmerra/magento2-connector`.
+
+`composer config repositories.askmerra vcs https://github.com/clogg74/askmerra-magento2.git` also adds
+the repository, but recent Composer versions rewrite the whole `repositories` section into a list when
+they do; editing `composer.json` keeps the diff to these lines.
 
 `setup:upgrade` creates three tables, the **Hide from AskMerra** product attribute, the secret part of
 the feed URLs, and puts the **AskMerra product sync** indexer on **Update by Schedule**.
