@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0.3 - 2026-10-06
+
+- ScandiPWA: the cart icon and the mini cart show products the AskMerra widget adds by itself
+  (with the chat's add to cart turned off, the widget fills the cart through GraphQL and fires
+  `askmerra:cart-added`): the extension reads the PWA's cart again then. Rebuild the theme after
+  `yarn upgrade @askmerra/scandipwa`.
+- The chat's "Add to cart" button shows that the product was added: the add_to_cart handlers of
+  ScandiPWA, Luma, Hyvä and Breeze resolve `true` once it is in the cart.
+- ScandiPWA: the `askmerra:cart-added` event's detail also carries `name` and `cartQty`, as on the
+  other themes.
+- The ScandiPWA extension's README gives the right command to update it after a Composer update
+  (`yarn upgrade @askmerra/scandipwa`; `yarn install --check-files` keeps the old copy).
+
 ## 1.0.2 - 2026-10-05
 
 Found by testing on fresh Magento 2.4.9 stores with Luma and with Hyvä 1.5:

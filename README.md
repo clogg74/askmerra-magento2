@@ -241,7 +241,8 @@ the checkout page unless asked for; other one-step checkouts can be added in `et
   the cart (the mini cart refreshes: Luma customer data, Hyvä `reload-customer-section-data`);
   products with options, out of stock or with required custom options open their page.
   `document` receives an `askmerra:cart-added` event for themes that open a cart drawer, with
-  `detail: {externalId, sku, name, cartQty}` (`cartQty`: the items in the cart after the add).
+  `detail: {externalId, sku, name, cartQty}` (`cartQty`: the items in the cart after the add). The
+  handler resolves `true` once the product is in the cart, so the chat's button shows it was added.
 - **Orders** - on the success page the order is passed to `AskMerra.trackPurchase()`; AskMerra sends
   it once the shopper's analytics consent allows it.
 - **Consent** - *Magento cookie notice* grants it when the shopper accepts the notice.
@@ -263,6 +264,9 @@ them - two lines in the theme's `package.json`, then build the theme:
 
 - **Add to cart** from the chat with the PWA's own cart (mini cart, notifications and cart
   customizations as with the PWA's own button); products with options open their page.
+- **The cart icon and mini cart** also show products the AskMerra widget adds by itself (with the
+  chat's add to cart turned off here): the PWA reads its cart again on the widget's
+  `askmerra:cart-added` event.
 - **Orders** reported on the checkout success step.
 - **The product being viewed**, once the AskMerra widget offers `AskMerra.setProduct()` (the widget
   reads `productId` only when it starts, and a single-page app changes product without loading a
@@ -307,7 +311,8 @@ if (config.enabled) {
 }
 
 // Add to cart with the PWA's own cart (GraphQL addProductsToCart); externalId is the product id
-// or SKU, as product_identifier says.
+// or SKU, as product_identifier says. Return true (or a promise of true) once the product is in
+// the cart: the chat's button then shows it was added.
 window.AskMerra?.on('add_to_cart', ({ externalId, sku, url }) => { /* add sku to the cart, or open url */ });
 
 // Order success page:
