@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Cron:etc/crontab.xsd">
+    <group id="default">
+        <!-- Sends (or caches, for feeds) the products that changed. Up to 50 seconds a minute. -->
+        <job name="askmerra_process_queue" instance="AskMerra\Connector\Cron\ProcessQueue" method="execute">
+            <schedule>* * * * *</schedule>
+        </job>
+        <!-- Products that sold out or came back through orders (MSI reservations change no product row). -->
+        <job name="askmerra_stock_check" instance="AskMerra\Connector\Cron\CheckStock" method="execute">
+            <schedule>*/15 * * * *</schedule>
+        </job>
+        <!-- Rewrites the feed files that changed (Product feed > Regenerate the feed). -->
+        <job name="askmerra_feed_generate" instance="AskMerra\Connector\Cron\GenerateFeeds" method="execute">
+            <config_path>crontab/default/jobs/askmerra_feed_generate/schedule/cron_expr</config_path>
+        </job>
+        <!-- Daily reconciliation, and the full rebuild on its days (Sync > Daily maintenance at). -->
+        <job name="askmerra_daily" instance="AskMerra\Connector\Cron\Daily" method="execute">
+            <config_path>crontab/default/jobs/askmerra_daily/schedule/cron_expr</config_path>
+        </job>
+    </group>
+</config>

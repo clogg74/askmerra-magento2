@@ -1,0 +1,25 @@
+# AskMerra chat widget settings for headless storefronts (PWA Studio, ScandiPWA, Hyva React...).
+# The catalog itself is synced by the server; the storefront only loads the widget.
+# Keep descriptions free of double quotes and backslashes: Magento's schema reader breaks on them.
+
+type Query {
+    askMerraWidgetConfig: AskMerraWidgetConfig
+        @resolver(class: "AskMerra\\Connector\\Model\\Resolver\\WidgetConfig")
+        @doc(description: "The AskMerra chat widget settings of the current store view.")
+}
+
+type AskMerraWidgetConfig @doc(description: "Load script_url with the attributes data-site-key, data-locale, data-position, data-open and data-api-url, as in the AskMerra snippet.") {
+    enabled: Boolean! @doc(description: "False: do not load the widget in this store view.")
+    script_url: String @doc(description: "The widget script.")
+    site_key: String @doc(description: "The public site key, pk_live_..., for data-site-key.")
+    locale: String @doc(description: "The AskMerra language of this store view, for data-locale: en, ro, it, fr, de or es.")
+    position: String @doc(description: "bottom-right or bottom-left, for data-position. Null keeps the position set in the AskMerra widget designer.")
+    open_on_load: Boolean @doc(description: "True: add data-open with the value true.")
+    api_url: String @doc(description: "Only set for an AskMerra test environment, for data-api-url.")
+    product_identifier: String @doc(description: "How products are identified in AskMerra: id for the product id, sku for the SKU. Use it for window.AskMerraSettings.productId and to find the product of an add_to_cart event.")
+    product_context: Boolean @doc(description: "On product pages, set window.AskMerraSettings.productId before loading the script.")
+    add_to_cart: Boolean @doc(description: "Handle the add_to_cart event of the widget with the cart of the storefront: AskMerra.on with add_to_cart.")
+    after_add_to_cart: String @doc(description: "stay or cart: what the storefront does after adding.")
+    track_purchases: Boolean @doc(description: "On the order success page, call AskMerra.trackPurchase with transaction_id, value, currency and items.")
+    consent_mode: String @doc(description: "auto for Google Consent Mode, granted to call AskMerra.setConsent with analytics true at once, magento after the cookie notice is accepted, or manual.")
+}

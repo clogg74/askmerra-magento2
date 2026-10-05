@@ -1,0 +1,14 @@
+{
+    "name": "@askmerra/scandipwa",
+    "version": "1.0.0",
+    "description": "AskMerra AI shopping assistant for ScandiPWA: add to cart from the chat into the PWA cart, order reporting and the product being viewed. Works with the Magento module askmerra/magento2-connector.",
+    "license": "proprietary",
+    "private": true,
+    "scandipwa": {
+        "type": "extension"
+    },
+    "peerDependencies": {
+        "@scandipwa/scandipwa": ">=5.0.0",
+        "@tilework/opus": "*"
+    }
+}

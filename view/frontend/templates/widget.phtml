@@ -1,0 +1,20 @@
+<?php
+/**
+ * The AskMerra chat widget (see AskMerra\Connector\Block\Widget).
+ *
+ * @var \AskMerra\Connector\Block\Widget $block
+ * @var \Magento\Framework\View\Helper\SecureHtmlRenderer $secureRenderer
+ */
+?>
+<?= /* @noEscape */ $secureRenderer->renderTag(
+    'script',
+    [],
+    // Settings a theme or tag manager defined before keep precedence.
+    'window.AskMerraSettings = Object.assign(' . $block->encodeJson($block->getSettings()) . ', window.AskMerraSettings || {});'
+    . 'window.AskMerraMagento = ' . $block->encodeJson($block->getStorefrontConfig()) . ';',
+    false
+) ?>
+<?= /* @noEscape */ $secureRenderer->renderTag('script', $block->getScriptAttributes(), null, false) ?>
+<?php if ($storefrontScriptUrl = $block->getStorefrontScriptUrl()): ?>
+<?= /* @noEscape */ $secureRenderer->renderTag('script', ['src' => $storefrontScriptUrl, 'defer' => 'defer'], null, false) ?>
+<?php endif; ?>

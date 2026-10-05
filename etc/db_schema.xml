@@ -1,0 +1,78 @@
+<?xml version="1.0"?>
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
+    <!-- Products waiting to be sent to AskMerra, one row per store view and product. -->
+    <table name="askmerra_queue" resource="default" engine="innodb" comment="AskMerra: products waiting to be sent">
+        <column xsi:type="int" name="queue_id" unsigned="true" nullable="false" identity="true" comment="Queue ID"/>
+        <column xsi:type="smallint" name="store_id" unsigned="true" nullable="false" comment="Store view ID"/>
+        <column xsi:type="int" name="product_id" unsigned="true" nullable="false" comment="Product ID"/>
+        <column xsi:type="smallint" name="attempts" unsigned="true" nullable="false" default="0" comment="Failed attempts"/>
+        <column xsi:type="datetime" name="available_at" nullable="false" comment="Not sent before (UTC)"/>
+        <column xsi:type="datetime" name="created_at" nullable="false" comment="Queued at (UTC)"/>
+        <column xsi:type="text" name="last_error" nullable="true" comment="Last error"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="queue_id"/>
+        </constraint>
+        <constraint xsi:type="unique" referenceId="ASKMERRA_QUEUE_STORE_ID_PRODUCT_ID">
+            <column name="store_id"/>
+            <column name="product_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="ASKMERRA_QUEUE_STORE_ID_STORE_STORE_ID"
+                    table="askmerra_queue" column="store_id" referenceTable="store" referenceColumn="store_id"
+                    onDelete="CASCADE"/>
+        <index referenceId="ASKMERRA_QUEUE_STORE_ID_ATTEMPTS_AVAILABLE_AT" indexType="btree">
+            <column name="store_id"/>
+            <column name="attempts"/>
+            <column name="available_at"/>
+        </index>
+    </table>
+
+    <!--
+        What each store view has in AskMerra: the id, language and a hash of every product as last
+        built. Only products whose hash changed are sent again or rewritten, and products that left
+        the catalog are found by comparing this table with the catalog (AskMerra's Push API never
+        removes products by itself). Feed store views also keep each product's finished feed entry,
+        compressed, so a feed of 50,000 products is rewritten in seconds without rebuilding it.
+        No foreign key to the product: the row must outlive it to remove it from AskMerra.
+    -->
+    <table name="askmerra_product_state" resource="default" engine="innodb" comment="AskMerra: products sent per store view">
+        <column xsi:type="smallint" name="store_id" unsigned="true" nullable="false" comment="Store view ID"/>
+        <column xsi:type="int" name="product_id" unsigned="true" nullable="false" comment="Product ID"/>
+        <column xsi:type="varchar" name="external_id" length="255" nullable="false" comment="AskMerra external_id"/>
+        <column xsi:type="varchar" name="locale" length="8" nullable="true" comment="AskMerra locale"/>
+        <column xsi:type="varchar" name="payload_hash" length="40" nullable="false" comment="SHA-1 of the product as built"/>
+        <column xsi:type="smallint" name="in_stock" unsigned="true" nullable="true" comment="In stock as last sent"/>
+        <column xsi:type="mediumblob" name="payload" nullable="true" comment="Feed entry, JSON, deflated (feed store views)"/>
+        <column xsi:type="datetime" name="synced_at" nullable="false" comment="Last sent or rebuilt (UTC)"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="store_id"/>
+            <column name="product_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="ASKMERRA_PRODUCT_STATE_STORE_ID_STORE_STORE_ID"
+                    table="askmerra_product_state" column="store_id" referenceTable="store" referenceColumn="store_id"
+                    onDelete="CASCADE"/>
+    </table>
+
+    <!-- Full syncs, feed generations and removals, for the status page. -->
+    <table name="askmerra_sync_run" resource="default" engine="innodb" comment="AskMerra: sync runs">
+        <column xsi:type="int" name="run_id" unsigned="true" nullable="false" identity="true" comment="Run ID"/>
+        <column xsi:type="smallint" name="store_id" unsigned="true" nullable="false" comment="Store view ID"/>
+        <column xsi:type="varchar" name="type" length="16" nullable="false" comment="rebuild, reconcile, feed or remove_all"/>
+        <column xsi:type="varchar" name="status" length="16" nullable="false" comment="running, success, partial, failed or replaced"/>
+        <column xsi:type="datetime" name="started_at" nullable="false" comment="Started (UTC)"/>
+        <column xsi:type="datetime" name="finished_at" nullable="true" comment="Finished (UTC)"/>
+        <column xsi:type="text" name="stats" nullable="true" comment="Counts, JSON"/>
+        <column xsi:type="text" name="message" nullable="true" comment="Message"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="run_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="ASKMERRA_SYNC_RUN_STORE_ID_STORE_STORE_ID"
+                    table="askmerra_sync_run" column="store_id" referenceTable="store" referenceColumn="store_id"
+                    onDelete="CASCADE"/>
+        <index referenceId="ASKMERRA_SYNC_RUN_STORE_ID_TYPE_STARTED_AT" indexType="btree">
+            <column name="store_id"/>
+            <column name="type"/>
+            <column name="started_at"/>
+        </index>
+    </table>
+</schema>

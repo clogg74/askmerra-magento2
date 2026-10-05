@@ -1,0 +1,49 @@
+{
+    "name": "askmerra/magento2-connector",
+    "description": "AskMerra AI shopping assistant for Magento 2: catalog sync through the Push API or a product feed, the storefront widget, native add to cart and sales attribution.",
+    "type": "magento2-module",
+    "license": "proprietary",
+    "keywords": [
+        "magento",
+        "magento2",
+        "askmerra",
+        "ai",
+        "shopping assistant",
+        "chatbot",
+        "product recommendations"
+    ],
+    "homepage": "https://askmerra.com",
+    "require": {
+        "php": "~8.1.0||~8.2.0||~8.3.0||~8.4.0",
+        "ext-curl": "*",
+        "ext-json": "*",
+        "ext-mbstring": "*",
+        "ext-xmlwriter": "*",
+        "magento/framework": ">=103.0.4",
+        "magento/module-backend": "*",
+        "magento/module-catalog": "*",
+        "magento/module-catalog-inventory": "*",
+        "magento/module-catalog-rule": "*",
+        "magento/module-checkout": "*",
+        "magento/module-config": "*",
+        "magento/module-cookie": "*",
+        "magento/module-csp": "*",
+        "magento/module-eav": "*",
+        "magento/module-indexer": "*",
+        "magento/module-sales": "*",
+        "magento/module-store": "*",
+        "magento/module-ui": "*"
+    },
+    "suggest": {
+        "magento/module-graph-ql": "Headless storefronts (PWA Studio, ScandiPWA, Hyvä React) read the widget settings over GraphQL",
+        "magento/module-configurable-product": "Variant options (size, colour...) of configurable products are sent as attributes"
+    },
+    "autoload": {
+        "files": [
+            "registration.php"
+        ],
+        "psr-4": {
+            "AskMerra\\Connector\\": ""
+        }
+    }
+}

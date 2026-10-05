@@ -1,0 +1,75 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <!-- var/log/askmerra.log -->
+    <type name="AskMerra\Connector\Model\Log\Logger">
+        <arguments>
+            <argument name="name" xsi:type="string">askmerra</argument>
+            <argument name="handlers" xsi:type="array">
+                <item name="file" xsi:type="object">AskMerra\Connector\Model\Log\Handler</item>
+            </argument>
+        </arguments>
+    </type>
+
+    <type name="Magento\Framework\Console\CommandList">
+        <arguments>
+            <argument name="commands" xsi:type="array">
+                <item name="askmerraTest" xsi:type="object">AskMerra\Connector\Console\Command\TestCommand</item>
+                <item name="askmerraSync" xsi:type="object">AskMerra\Connector\Console\Command\SyncCommand</item>
+                <item name="askmerraFeed" xsi:type="object">AskMerra\Connector\Console\Command\FeedCommand</item>
+                <item name="askmerraStatus" xsi:type="object">AskMerra\Connector\Console\Command\StatusCommand</item>
+                <item name="askmerraPayload" xsi:type="object">AskMerra\Connector\Console\Command\PayloadCommand</item>
+                <item name="askmerraRemove" xsi:type="object">AskMerra\Connector\Console\Command\RemoveCommand</item>
+            </argument>
+        </arguments>
+    </type>
+    <!-- Commands are built when bin/magento lists them: their heavy dependencies wait until used. -->
+    <type name="AskMerra\Connector\Console\Command\SyncCommand">
+        <arguments>
+            <argument name="queueProcessor" xsi:type="object">AskMerra\Connector\Model\Sync\QueueProcessor\Proxy</argument>
+            <argument name="reconciler" xsi:type="object">AskMerra\Connector\Model\Sync\Reconciler\Proxy</argument>
+            <argument name="enqueuer" xsi:type="object">AskMerra\Connector\Model\Sync\Enqueuer\Proxy</argument>
+            <argument name="productResource" xsi:type="object">Magento\Catalog\Model\ResourceModel\Product\Proxy</argument>
+        </arguments>
+    </type>
+    <type name="AskMerra\Connector\Console\Command\FeedCommand">
+        <arguments>
+            <argument name="feedGenerator" xsi:type="object">AskMerra\Connector\Model\Feed\FeedGenerator\Proxy</argument>
+        </arguments>
+    </type>
+    <type name="AskMerra\Connector\Console\Command\PayloadCommand">
+        <arguments>
+            <argument name="productBuilder" xsi:type="object">AskMerra\Connector\Model\Catalog\ProductBuilder\Proxy</argument>
+            <argument name="productResource" xsi:type="object">Magento\Catalog\Model\ResourceModel\Product\Proxy</argument>
+        </arguments>
+    </type>
+    <type name="AskMerra\Connector\Console\Command\TestCommand">
+        <arguments>
+            <argument name="client" xsi:type="object">AskMerra\Connector\Model\Api\Client\Proxy</argument>
+        </arguments>
+    </type>
+    <type name="AskMerra\Connector\Console\Command\StatusCommand">
+        <arguments>
+            <argument name="status" xsi:type="object">AskMerra\Connector\Model\Status\Proxy</argument>
+        </arguments>
+    </type>
+    <type name="AskMerra\Connector\Console\Command\RemoveCommand">
+        <arguments>
+            <argument name="remover" xsi:type="object">AskMerra\Connector\Model\Sync\Remover\Proxy</argument>
+        </arguments>
+    </type>
+
+    <!-- Catalog price rule changes, which a full rule reindex hides from the change log. -->
+    <type name="Magento\CatalogRule\Model\Indexer\IndexBuilder">
+        <plugin name="askmerra_capture_rule_price_changes" type="AskMerra\Connector\Plugin\CatalogRule\CaptureRulePriceChanges"/>
+    </type>
+
+    <!-- The widget script and API hosts, when they are not the default ones (csp_whitelist.xml). -->
+    <type name="Magento\Csp\Model\CompositePolicyCollector">
+        <arguments>
+            <argument name="collectors" xsi:type="array">
+                <item name="askmerra" xsi:type="object" sortOrder="99">AskMerra\Connector\Model\Csp\PolicyCollector</item>
+            </argument>
+        </arguments>
+    </type>
+</config>

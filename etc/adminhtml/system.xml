@@ -1,0 +1,222 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <tab id="askmerra" translate="label" sortOrder="400">
+            <label>AskMerra</label>
+        </tab>
+        <section id="askmerra" translate="label" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+            <label>AI Shopping Assistant</label>
+            <tab>askmerra</tab>
+            <resource>AskMerra_Connector::config</resource>
+
+            <group id="general" translate="label comment" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Connection</label>
+                <comment><![CDATA[Create the keys in your AskMerra dashboard, under <strong>API keys</strong>. One AskMerra shop has one currency: a store view in another currency (or another brand) connects to its own AskMerra shop - switch the scope to that store view and enter its keys there.]]></comment>
+                <field id="enabled" translate="label" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Enable AskMerra</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="secret_key" translate="label comment" type="obscure" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Secret key</label>
+                    <comment><![CDATA[Starts with <code>sk_live_</code>. Used only by the server to send your catalog; it is stored encrypted and never reaches the storefront.]]></comment>
+                    <backend_model>Magento\Config\Model\Config\Backend\Encrypted</backend_model>
+                </field>
+                <field id="site_key" translate="label comment" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Site key</label>
+                    <comment><![CDATA[Starts with <code>pk_live_</code>. The public key of the chat widget. Add this store's domain to the allowed domains of your AskMerra shop.]]></comment>
+                </field>
+                <field id="locale" translate="label comment" type="select" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Language</label>
+                    <comment>The language this store view's products are sent in and the assistant answers in. Automatic uses the store view's locale (Stores > Configuration > General > Locale Options) when AskMerra supports it.</comment>
+                    <source_model>AskMerra\Connector\Model\Config\Source\Locale</source_model>
+                </field>
+                <field id="test_connection" translate="label" type="button" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Check connection</label>
+                    <frontend_model>AskMerra\Connector\Block\Adminhtml\System\Config\TestConnection</frontend_model>
+                </field>
+            </group>
+
+            <group id="catalog" translate="label comment" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Catalog</label>
+                <comment><![CDATA[What AskMerra learns about your products. Saving changes here sends the whole catalog again. <strong>Note:</strong> AskMerra re-reads a product with AI (billed as usage) when its name, description, categories, brand or attributes change - pick attributes that describe the product, not ones that change every day.]]></comment>
+                <field id="sync_method" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>How AskMerra gets the catalog</label>
+                    <comment><![CDATA[<strong>Push API</strong> sends changes within about a minute and removes deleted products. <strong>Feed</strong> publishes a file that AskMerra downloads every 1 to 6 hours (depending on your plan) - add its URL in the AskMerra dashboard, under Catalog > Add source > Feed URL.]]></comment>
+                    <source_model>AskMerra\Connector\Model\Config\Source\SyncMethod</source_model>
+                </field>
+                <field id="product_identifier" translate="label comment" type="select" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Product identifier</label>
+                    <comment>How products are matched between Magento and AskMerra. Product ID never changes; choose SKU only if your other AskMerra data already uses SKUs. Changing it later replaces the whole catalog in AskMerra.</comment>
+                    <source_model>AskMerra\Connector\Model\Config\Source\Identifier</source_model>
+                </field>
+                <field id="attributes" translate="label comment" type="multiselect" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Product attributes to include</label>
+                    <comment><![CDATA[The details the assistant can use to answer and filter: e.g. skin type, ingredients, colour, size, material. Sent with their store view labels. Select several with Ctrl/Cmd. Avoid stock, prices and dates - they are sent separately.]]></comment>
+                    <source_model>AskMerra\Connector\Model\Config\Source\ProductAttributes</source_model>
+                    <can_be_empty>1</can_be_empty>
+                </field>
+                <field id="brand_attribute" translate="label" type="select" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Brand attribute</label>
+                    <source_model>AskMerra\Connector\Model\Config\Source\BrandAttribute</source_model>
+                </field>
+                <field id="description_source" translate="label comment" type="select" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Description</label>
+                    <comment>Sent as plain text (HTML, Page Builder styles and widget codes are removed), up to 20,000 characters.</comment>
+                    <source_model>AskMerra\Connector\Model\Config\Source\DescriptionSource</source_model>
+                </field>
+                <field id="include_variant_options" translate="label comment" type="select" sortOrder="60" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Include variant options</label>
+                    <comment>For configurable products: the sizes, colours... a shopper can choose are sent as attributes of the product. The product itself is sent once, not once per variant.</comment>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="image_count" translate="label comment" type="select" sortOrder="70" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Images per product</label>
+                    <comment>The main image comes first; the chat shows it on the product card.</comment>
+                    <source_model>AskMerra\Connector\Model\Config\Source\ImageCount</source_model>
+                </field>
+                <field id="product_types" translate="label" type="multiselect" sortOrder="80" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Product types</label>
+                    <source_model>AskMerra\Connector\Model\Config\Source\ProductTypes</source_model>
+                </field>
+                <field id="visibility" translate="label" type="multiselect" sortOrder="90" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Product visibility</label>
+                    <source_model>AskMerra\Connector\Model\Config\Source\Visibility</source_model>
+                </field>
+                <field id="include_out_of_stock" translate="label comment" type="select" sortOrder="100" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Include out-of-stock products</label>
+                    <comment>Recommended: the assistant then knows the product and can say it is out of stock - it never recommends it. With No, products leave AskMerra while out of stock.</comment>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="include_stock_qty" translate="label" type="select" sortOrder="110" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Send stock quantity</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="excluded_category_ids" translate="label comment" type="text" sortOrder="120" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Exclude categories</label>
+                    <comment><![CDATA[Category IDs, separated by commas; their subcategories are excluded too. To leave out single products, set <strong>Hide from AskMerra</strong> on the product (AskMerra tab).]]></comment>
+                </field>
+            </group>
+
+            <group id="push" translate="label comment" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Sync</label>
+                <comment><![CDATA[Only what changed is rebuilt and sent: product, price and stock changes - also those made by imports and ERP integrations - are picked up within about a minute (Magento cron and the <em>AskMerra product sync</em> indexer on <em>Update by Schedule</em>, set on install). Every day the module also adds products that are missing in AskMerra and removes the ones that left the catalog. Large catalogs are fine: 50,000 products are not rebuilt unless they change.]]></comment>
+                <field id="batch_size" translate="label comment" type="text" sortOrder="10" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Products per request</label>
+                    <comment>Push API, 1 to 500. Lower it if products have very long descriptions.</comment>
+                    <validate>validate-digits validate-digits-range digits-range-1-500</validate>
+                </field>
+                <field id="full_sync_time" translate="label comment" type="time" sortOrder="20" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Daily maintenance at</label>
+                    <comment>Server time. Adds missing products, removes products that left the catalog, picks up special prices that start or end today.</comment>
+                    <backend_model>AskMerra\Connector\Model\Config\Backend\DailyCron</backend_model>
+                </field>
+                <field id="full_sync_frequency" translate="label comment" type="select" sortOrder="30" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Full rebuild</label>
+                    <comment>A safety net: every product is rebuilt and compared - still only changed ones are sent. Runs at the maintenance time, spread over the following minutes.</comment>
+                    <source_model>AskMerra\Connector\Model\Config\Source\FullSyncFrequency</source_model>
+                </field>
+                <field id="status" translate="label" type="button" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Sync status</label>
+                    <frontend_model>AskMerra\Connector\Block\Adminhtml\System\Config\StatusLink</frontend_model>
+                </field>
+            </group>
+
+            <group id="feed" translate="label comment" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Product feed</label>
+                <comment>Used by the store views whose catalog is sent as a feed. Each store view has its own feed URL.</comment>
+                <field id="format" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Format</label>
+                    <comment><![CDATA[<strong>JSON</strong> carries every selected attribute. <strong>Google Shopping XML</strong> can also be used for Google Merchant Center, but only keeps standard attributes (colour, size, material, gender, GTIN, EAN, skin type, ingredients, volume, weight...).]]></comment>
+                    <source_model>AskMerra\Connector\Model\Config\Source\FeedFormat</source_model>
+                </field>
+                <field id="frequency" translate="label comment" type="select" sortOrder="20" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Regenerate the feed</label>
+                    <comment>Only changed products are rebuilt; the file itself is rewritten from them in seconds, and only when something changed. Keep it at least as often as AskMerra downloads it (every 1 to 6 hours, depending on the plan).</comment>
+                    <source_model>AskMerra\Connector\Model\Config\Source\FeedFrequency</source_model>
+                    <backend_model>AskMerra\Connector\Model\Config\Backend\FeedCron</backend_model>
+                </field>
+                <field id="urls" translate="label" type="button" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Feed URLs</label>
+                    <frontend_model>AskMerra\Connector\Block\Adminhtml\System\Config\FeedUrls</frontend_model>
+                </field>
+            </group>
+
+            <group id="widget" translate="label comment" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Storefront widget</label>
+                <comment><![CDATA[Look, greeting, colours and where the chat shows are set in the AskMerra widget designer. Headless storefronts (PWA Studio, ScandiPWA...) read these settings with the GraphQL query <code>askMerraWidgetConfig</code> - see the module README.]]></comment>
+                <field id="enabled" translate="label" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Show the chat widget</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="script_url" translate="label comment" type="text" sortOrder="15" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Widget script URL</label>
+                    <comment><![CDATA[The <code>src</code> of the snippet in the AskMerra dashboard (Install); the snippet's other value is the site key above. The script is added to the <code>&lt;head&gt;</code> of every page - Luma, Hyvä and ScandiPWA alike.]]></comment>
+                    <validate>validate-url</validate>
+                    <depends>
+                        <field id="enabled">1</field>
+                    </depends>
+                </field>
+                <field id="position" translate="label" type="select" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Position</label>
+                    <source_model>AskMerra\Connector\Model\Config\Source\Position</source_model>
+                </field>
+                <field id="open_on_load" translate="label comment" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Open on page load</label>
+                    <comment>Desktop only.</comment>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="show_on_checkout" translate="label comment" type="select" sortOrder="35" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Show on the checkout page</label>
+                    <comment>Off by default so shoppers are not distracted while paying. The order success page always loads the widget when orders are reported.</comment>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="product_context" translate="label comment" type="select" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Know the product being viewed</label>
+                    <comment>On product pages the assistant knows which product the shopper is looking at ("Is this good for dry skin?").</comment>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="add_to_cart" translate="label comment" type="select" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Add to cart from the chat</label>
+                    <comment>Simple products go straight into the Magento cart and the mini cart refreshes; products with options (sizes, colours...) open their page. Also turn on "Show add to cart" in the AskMerra widget designer.</comment>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="after_add_to_cart" translate="label" type="select" sortOrder="60" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>After adding to cart</label>
+                    <source_model>AskMerra\Connector\Model\Config\Source\AfterAddToCart</source_model>
+                    <depends>
+                        <field id="add_to_cart">1</field>
+                    </depends>
+                </field>
+                <field id="track_purchases" translate="label comment" type="select" sortOrder="70" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Report orders to AskMerra</label>
+                    <comment>On the order success page, so AskMerra can show the sales the assistant helped with. No name, e-mail or address is sent - only the order number, total and products.</comment>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="consent_mode" translate="label comment" type="select" sortOrder="80" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Analytics consent</label>
+                    <comment><![CDATA[Orders are reported only with the shopper's analytics consent. <strong>Automatic</strong>: read from Google Consent Mode / Google Tag Manager. <strong>Magento cookie notice</strong>: when the shopper accepts Magento's cookie notice. <strong>Not needed</strong>: no consent banner is required on this site. <strong>Manual</strong>: your cookie banner calls <code>AskMerra.setConsent({analytics: true})</code>.]]></comment>
+                    <source_model>AskMerra\Connector\Model\Config\Source\ConsentMode</source_model>
+                </field>
+            </group>
+
+            <group id="advanced" translate="label" sortOrder="90" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Advanced</label>
+                <field id="api_url" translate="label comment" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>API URL</label>
+                    <comment>Change only for an AskMerra test environment.</comment>
+                    <validate>validate-url</validate>
+                </field>
+                <field id="timeout" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Request timeout (seconds)</label>
+                    <validate>validate-digits</validate>
+                </field>
+                <field id="debug" translate="label comment" type="select" sortOrder="40" showInDefault="1" showInWebsite="0" showInStore="0">
+                    <label>Debug log</label>
+                    <comment>Writes every request and response to var/log/askmerra.log. Errors are always logged.</comment>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+            </group>
+        </section>
+    </system>
+</config>

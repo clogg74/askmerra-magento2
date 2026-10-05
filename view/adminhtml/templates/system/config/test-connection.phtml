@@ -1,0 +1,72 @@
+<?php
+/**
+ * @var \AskMerra\Connector\Block\Adminhtml\System\Config\TestConnection $block
+ * @var \Magento\Framework\Escaper $escaper
+ * @var \Magento\Framework\View\Helper\SecureHtmlRenderer $secureRenderer
+ */
+$config = [
+    'url' => $block->getTestUrl(),
+    'checking' => (string) __('Checking...'),
+    'failed' => (string) __('The check could not run. Reload the page and try again.'),
+];
+$configJson = json_encode($config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+?>
+<button type="button" class="action-default scalable" id="askmerra-test-connection">
+    <span><?= $escaper->escapeHtml(__('Check connection')) ?></span>
+</button>
+<div id="askmerra-test-connection-result" style="margin-top: 10px;"></div>
+<p class="note"><span><?= $escaper->escapeHtml(__('Checks the keys as typed, before saving.')) ?></span></p>
+<?= /* @noEscape */ $secureRenderer->renderTag('script', [], <<<JS
+(function () {
+    var config = {$configJson};
+    var button = document.getElementById('askmerra-test-connection');
+    var output = document.getElementById('askmerra-test-connection-result');
+
+    function field(id) {
+        var input = document.getElementById(id);
+        return input && !input.disabled ? input.value : null;
+    }
+
+    function show(messages) {
+        output.innerHTML = '';
+        messages.forEach(function (message) {
+            var box = document.createElement('div');
+            box.className = 'message message-' + (message.type || 'notice');
+            box.style.margin = '0 0 6px';
+            box.textContent = message.text;
+            output.appendChild(box);
+        });
+    }
+
+    button.addEventListener('click', function () {
+        var body = new URLSearchParams();
+        body.append('form_key', window.FORM_KEY);
+        [['secret_key', 'askmerra_general_secret_key'], ['site_key', 'askmerra_general_site_key'],
+            ['sync_method', 'askmerra_catalog_sync_method'], ['api_url', 'askmerra_advanced_api_url']
+        ].forEach(function (pair) {
+            var value = field(pair[1]);
+            if (value !== null) {
+                body.append(pair[0], value);
+            }
+        });
+
+        button.disabled = true;
+        show([{type: 'notice', text: config.checking}]);
+
+        fetch(config.url, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {'X-Requested-With': 'XMLHttpRequest', Accept: 'application/json'},
+            body: body
+        }).then(function (response) {
+            return response.json();
+        }).then(function (result) {
+            show(result && result.messages ? result.messages : [{type: 'error', text: config.failed}]);
+        })['catch'](function () {
+            show([{type: 'error', text: config.failed}]);
+        }).then(function () {
+            button.disabled = false;
+        });
+    });
+})();
+JS, false) ?>

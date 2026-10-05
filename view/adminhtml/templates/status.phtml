@@ -1,0 +1,244 @@
+<?php
+/**
+ * @var \AskMerra\Connector\Block\Adminhtml\Status $block
+ * @var \Magento\Framework\Escaper $escaper
+ * @var \Magento\Framework\View\Helper\SecureHtmlRenderer $secureRenderer
+ */
+$stores = $block->getStores();
+$actionUrl = $block->getActionUrl();
+$formKey = $block->getFormKey();
+$preview = $block->getPreview();
+$modes = [
+    'push' => __('Push API'),
+    'feed' => __('Product feed'),
+];
+
+/** A POST button for one action of the Sync status page. */
+$button = static function (string $do, string $label, ?int $storeId = null, string $class = 'action-default', ?string $confirm = null, array $extra = []) use ($escaper, $actionUrl, $formKey): string {
+    $fields = '<input type="hidden" name="form_key" value="' . $escaper->escapeHtmlAttr($formKey) . '"/>'
+        . '<input type="hidden" name="do" value="' . $escaper->escapeHtmlAttr($do) . '"/>';
+
+    if ($storeId !== null) {
+        $fields .= '<input type="hidden" name="store" value="' . (int) $storeId . '"/>';
+    }
+
+    foreach ($extra as $name => $value) {
+        $fields .= '<input type="hidden" name="' . $escaper->escapeHtmlAttr($name) . '" value="' . $escaper->escapeHtmlAttr((string) $value) . '"/>';
+    }
+
+    return '<form method="post" action="' . $escaper->escapeUrl($actionUrl) . '" style="display:inline-block;margin:0 8px 8px 0"'
+        . ($confirm ? ' data-askmerra-confirm="' . $escaper->escapeHtmlAttr($confirm) . '"' : '') . '>'
+        . $fields
+        . '<button type="submit" class="' . $escaper->escapeHtmlAttr($class) . '"><span>' . $escaper->escapeHtml($label) . '</span></button>'
+        . '</form>';
+};
+?>
+<div class="askmerra-status">
+    <?php foreach ($block->getWarnings() as $warning): ?>
+        <div class="message message-warning"><div><?= $escaper->escapeHtml($warning) ?></div></div>
+    <?php endforeach; ?>
+
+    <p>
+        <?= $escaper->escapeHtml(__('Only products whose content changed are rebuilt and sent. Changes are picked up within about a minute by Magento cron; every day missing products are added and products that left the catalog are removed.')) ?>
+        <a href="<?= $escaper->escapeUrl($block->getSettingsUrl()) ?>"><?= $escaper->escapeHtml(__('Settings')) ?></a>
+    </p>
+
+    <?php foreach ($stores as $store): ?>
+        <?php
+        $storeId = (int) $store['store_id'];
+        $mode = $store['mode'];
+        ?>
+        <section class="admin__page-section" style="margin-bottom: 30px;">
+            <div class="admin__page-section-title">
+                <span class="title">
+                    <?= $escaper->escapeHtml($store['website'] . ' / ' . $store['name']) ?>
+                    <small style="font-weight: normal;">(<?= $escaper->escapeHtml($store['code']) ?>)</small>
+                    &mdash;
+                    <?php if ($mode !== null): ?>
+                        <?= $escaper->escapeHtml($modes[$mode]) ?>
+                    <?php elseif ($store['missing_key']): ?>
+                        <?= $escaper->escapeHtml(__('Not syncing: no secret key')) ?>
+                    <?php else: ?>
+                        <?= $escaper->escapeHtml(__('Off')) ?>
+                    <?php endif; ?>
+                </span>
+                <a href="<?= $escaper->escapeUrl($block->getSettingsUrl($storeId)) ?>" style="margin-left: 12px;"><?= $escaper->escapeHtml(__('Settings of this store view')) ?></a>
+            </div>
+
+            <?php if ($store['problem']): ?>
+                <div class="message message-error">
+                    <div>
+                        <?= $escaper->escapeHtml(__('AskMerra refuses this store view\'s key since %1: %2', $block->formatUtc($store['problem']['since']), $store['problem']['message'])) ?>
+                        <?= /* @noEscape */ $button('clear_problem', (string) __('Hide until it happens again'), $storeId) ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($mode !== null || $store['products'] > 0): ?>
+                <table class="admin__table-secondary" style="max-width: 900px;">
+                    <tbody>
+                        <tr><th><?= $escaper->escapeHtml(__('Language / currency')) ?></th><td><?= $escaper->escapeHtml(($store['locale'] ?? __('shop default')) . ' / ' . $store['currency']) ?></td></tr>
+                        <tr><th><?= $escaper->escapeHtml(__('Products in AskMerra')) ?></th><td><?= (int) $store['products'] ?></td></tr>
+                        <tr><th><?= $escaper->escapeHtml(__('Waiting to be sent')) ?></th><td><?= (int) $store['pending'] ?></td></tr>
+                        <tr><th><?= $escaper->escapeHtml(__('Failed')) ?></th><td><?= (int) $store['failed'] ?></td></tr>
+                        <tr><th><?= $escaper->escapeHtml(__('Last product sent')) ?></th><td><?= $escaper->escapeHtml($block->formatUtc($store['last_synced_at'])) ?></td></tr>
+                        <tr>
+                            <th><?= $escaper->escapeHtml(__('Daily check')) ?></th>
+                            <td>
+                                <?= $escaper->escapeHtml($block->formatUtc($store['last_reconcile']['started_at'] ?? null)) ?>
+                                <small><?= $escaper->escapeHtml($block->formatStats($store['last_reconcile'])) ?></small>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th><?= $escaper->escapeHtml(__('Full rebuild')) ?></th>
+                            <td>
+                                <?= $escaper->escapeHtml($block->formatUtc($store['last_rebuild']['started_at'] ?? null)) ?>
+                                <small><?= $escaper->escapeHtml($block->formatStats($store['last_rebuild'])) ?></small>
+                            </td>
+                        </tr>
+                        <?php if ($store['feed']): ?>
+                            <?php $feed = $store['feed']; ?>
+                            <tr>
+                                <th><?= $escaper->escapeHtml(__('Feed URL')) ?></th>
+                                <td>
+                                    <input type="text" class="admin__control-text" readonly="readonly" style="width: 100%;"
+                                           value="<?= $escaper->escapeHtmlAttr($feed['url']) ?>"/>
+                                </td>
+                            </tr>
+                            <tr>
+                                <th><?= $escaper->escapeHtml(__('Feed file')) ?></th>
+                                <td>
+                                    <?php if ($feed['exists']): ?>
+                                        <?= $escaper->escapeHtml(__('%1, %2 KB, %3', strtoupper($feed['format'] === 'google_xml' ? 'xml' : 'json'), number_format($feed['bytes'] / 1024, 0), $block->formatUtc($feed['modified_at']))) ?>
+                                        <?php if ($feed['dirty']): ?>
+                                            &mdash; <?= $escaper->escapeHtml(__('products changed since; rewritten at the next scheduled run')) ?>
+                                        <?php endif; ?>
+                                    <?php elseif (!$feed['ready']): ?>
+                                        <?= $escaper->escapeHtml(__('Being prepared: it is published once the whole catalog is ready (%1 products to go).', (int) $store['pending'])) ?>
+                                    <?php else: ?>
+                                        <?= $escaper->escapeHtml(__('Not written yet.')) ?>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+
+                <div style="margin-top: 12px;">
+                    <?php if ($mode !== null): ?>
+                        <?= /* @noEscape */ $button('process', (string) __('Send changes now'), $storeId, 'action-primary') ?>
+                        <?php if ($mode === 'feed'): ?>
+                            <?= /* @noEscape */ $button('feed', (string) __('Write the feed now'), $storeId) ?>
+                        <?php endif; ?>
+                        <?php if ($store['failed'] > 0): ?>
+                            <?= /* @noEscape */ $button('retry', (string) __('Retry failed products'), $storeId) ?>
+                        <?php endif; ?>
+                        <?= /* @noEscape */ $button('reconcile', (string) __('Run the daily check now'), $storeId) ?>
+                        <?= /* @noEscape */ $button(
+                            'rebuild',
+                            (string) __('Full rebuild'),
+                            $storeId,
+                            'action-default',
+                            (string) __('Rebuild every product of this store view? Only products whose content changed are sent.')
+                        ) ?>
+                    <?php elseif ($store['products'] > 0): ?>
+                        <p><?= $escaper->escapeHtml(__('This store view no longer syncs, but AskMerra still has %1 of its products.', (int) $store['products'])) ?></p>
+                        <?= /* @noEscape */ $button(
+                            'remove',
+                            (string) __('Remove its products from AskMerra'),
+                            $storeId,
+                            'action-default',
+                            (string) __('Remove every product of this store view from AskMerra? The assistant stops recommending them. A feed source must also be deleted in the AskMerra dashboard.')
+                        ) ?>
+                    <?php endif; ?>
+                </div>
+
+                <?php if ($store['errors']): ?>
+                    <h3 style="margin-top: 16px;"><?= $escaper->escapeHtml(__('Latest errors')) ?></h3>
+                    <table class="data-grid" style="max-width: 1200px;">
+                        <thead>
+                            <tr>
+                                <th class="data-grid-th"><?= $escaper->escapeHtml(__('Product')) ?></th>
+                                <th class="data-grid-th"><?= $escaper->escapeHtml(__('Attempts')) ?></th>
+                                <th class="data-grid-th"><?= $escaper->escapeHtml(__('Next attempt')) ?></th>
+                                <th class="data-grid-th"><?= $escaper->escapeHtml(__('Error')) ?></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($store['errors'] as $error): ?>
+                                <tr>
+                                    <td><a href="<?= $escaper->escapeUrl($block->getProductUrl((int) $error['product_id'])) ?>"><?= (int) $error['product_id'] ?></a></td>
+                                    <td><?= (int) $error['attempts'] ?></td>
+                                    <td>
+                                        <?= (int) $error['attempts'] >= \AskMerra\Connector\Model\Sync\Queue::MAX_ATTEMPTS
+                                            ? $escaper->escapeHtml(__('none: retry, or change the product'))
+                                            : $escaper->escapeHtml($block->formatUtc($error['available_at'])) ?>
+                                    </td>
+                                    <td><?= $escaper->escapeHtml($error['last_error']) ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                <?php endif; ?>
+            <?php endif; ?>
+        </section>
+    <?php endforeach; ?>
+
+    <?php if ($block->hasFeedStores()): ?>
+        <section class="admin__page-section" style="margin-bottom: 30px;">
+            <div class="admin__page-section-title"><span class="title"><?= $escaper->escapeHtml(__('Feed URLs')) ?></span></div>
+            <p><?= $escaper->escapeHtml(__('The feed URLs hold a secret part so only AskMerra can find them. If a URL was shared by mistake, give every feed a new one - then update the feed sources in the AskMerra dashboard.')) ?></p>
+            <?= /* @noEscape */ $button(
+                'token',
+                (string) __('Give the feeds new URLs'),
+                null,
+                'action-default',
+                (string) __('Every feed gets a new URL and the old ones stop working. Update the feed sources in AskMerra afterwards. Continue?')
+            ) ?>
+        </section>
+    <?php endif; ?>
+
+    <section class="admin__page-section">
+        <div class="admin__page-section-title"><span class="title"><?= $escaper->escapeHtml(__('Preview a product')) ?></span></div>
+        <form method="get" action="<?= $escaper->escapeUrl($block->getUrl('askmerra/status/index')) ?>">
+            <input type="text" name="preview" class="admin__control-text" style="width: 260px;"
+                   placeholder="<?= $escaper->escapeHtmlAttr(__('Product ID or SKU')) ?>"
+                   value="<?= $escaper->escapeHtmlAttr($block->getPreviewQuery()) ?>"/>
+            <select name="preview_store" class="admin__control-select">
+                <?php foreach ($stores as $store): ?>
+                    <option value="<?= (int) $store['store_id'] ?>"<?= (int) $store['store_id'] === $block->getPreviewStoreId() ? ' selected="selected"' : '' ?>>
+                        <?= $escaper->escapeHtml($store['website'] . ' / ' . $store['name']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <button type="submit" class="action-default"><span><?= $escaper->escapeHtml(__('Preview')) ?></span></button>
+        </form>
+
+        <?php if ($preview !== null): ?>
+            <div style="margin-top: 16px;">
+                <p><strong><?= $escaper->escapeHtml($preview['title']) ?></strong></p>
+                <?php if (!empty($preview['reason'])): ?>
+                    <p><?= $escaper->escapeHtml($preview['reason']) ?></p>
+                <?php endif; ?>
+                <?php if (!empty($preview['sent'])): ?>
+                    <p><?= $escaper->escapeHtml($preview['sent']) ?></p>
+                <?php endif; ?>
+                <?php if (!empty($preview['json'])): ?>
+                    <pre style="max-height: 600px; overflow: auto; background: #f8f8f8; padding: 12px; border: 1px solid #e3e3e3;"><?= $escaper->escapeHtml($preview['json']) ?></pre>
+                <?php endif; ?>
+                <?php if (!empty($preview['product_id'])): ?>
+                    <?= /* @noEscape */ $button('queue_product', (string) __('Send this product now'), (int) $block->getPreviewStoreId(), 'action-default', null, ['product' => (int) $preview['product_id']]) ?>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+    </section>
+</div>
+<?= /* @noEscape */ $secureRenderer->renderTag('script', [], <<<JS
+document.querySelectorAll('.askmerra-status form[data-askmerra-confirm]').forEach(function (form) {
+    form.addEventListener('submit', function (event) {
+        if (!window.confirm(form.getAttribute('data-askmerra-confirm'))) {
+            event.preventDefault();
+        }
+    });
+});
+JS, false) ?>

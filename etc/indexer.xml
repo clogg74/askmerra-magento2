@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:Indexer/etc/indexer.xsd">
+    <indexer id="askmerra_products" view_id="askmerra_products" class="AskMerra\Connector\Model\Indexer\Product">
+        <title translate="true">AskMerra product sync</title>
+        <description translate="true">Queues changed products for AskMerra. Keep it on "Update by Schedule"; a full reindex rebuilds every product (only changed ones are sent).</description>
+    </indexer>
+</config>

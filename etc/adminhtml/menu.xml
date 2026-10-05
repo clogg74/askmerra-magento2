@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Backend:etc/menu.xsd">
+    <menu>
+        <add id="AskMerra_Connector::askmerra" title="AskMerra" translate="title" module="AskMerra_Connector"
+             sortOrder="80" parent="Magento_Backend::marketing" resource="AskMerra_Connector::askmerra"/>
+        <add id="AskMerra_Connector::status" title="Sync status" translate="title" module="AskMerra_Connector"
+             sortOrder="10" parent="AskMerra_Connector::askmerra" action="askmerra/status/index"
+             resource="AskMerra_Connector::status"/>
+        <add id="AskMerra_Connector::config" title="Settings" translate="title" module="AskMerra_Connector"
+             sortOrder="20" parent="AskMerra_Connector::askmerra" action="adminhtml/system_config/edit/section/askmerra"
+             resource="AskMerra_Connector::config"/>
+    </menu>
+</config>

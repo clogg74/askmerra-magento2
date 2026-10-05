@@ -1,0 +1,25 @@
+<?php
+/**
+ * @var \AskMerra\Connector\Block\Adminhtml\System\Config\FeedUrls $block
+ * @var \Magento\Framework\Escaper $escaper
+ */
+$feeds = $block->getFeeds();
+?>
+<?php if (!$feeds): ?>
+    <p class="note"><span><?= $escaper->escapeHtml(__('No store view in this scope sends its catalog as a feed. Set "How AskMerra gets the catalog" to "Product feed" and save.')) ?></span></p>
+<?php else: ?>
+    <?php foreach ($feeds as $feed): ?>
+        <div style="margin-bottom: 14px;">
+            <strong><?= $escaper->escapeHtml($feed['name']) ?></strong>
+            <input type="text" class="input-text admin__control-text" readonly="readonly"
+                   value="<?= $escaper->escapeHtmlAttr($feed['url']) ?>" style="margin-top: 4px;"/>
+            <p class="note"><span><?= $escaper->escapeHtml($feed['status']) ?></span></p>
+        </div>
+    <?php endforeach; ?>
+    <p class="note">
+        <span>
+            <?= $escaper->escapeHtml(__('In the AskMerra dashboard: Catalog, Add source, Feed URL. The URL holds a secret part - share it only with AskMerra.')) ?>
+            <a href="<?= $escaper->escapeUrl($block->getStatusUrl()) ?>"><?= $escaper->escapeHtml(__('Generate now or change the secret part on the Sync status page.')) ?></a>
+        </span>
+    </p>
+<?php endif; ?>

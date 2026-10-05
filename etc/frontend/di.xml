@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <!-- Pages where the chat stays hidden unless "Show on the checkout page" is on. Add the
+         checkout of another one-step-checkout module here. -->
+    <type name="AskMerra\Connector\Block\Widget">
+        <arguments>
+            <argument name="checkoutActions" xsi:type="array">
+                <item name="magento" xsi:type="string">checkout_index_index</item>
+                <item name="onestepcheckout" xsi:type="string">onestepcheckout_index_index</item>
+                <item name="firecheckout" xsi:type="string">firecheckout_index_index</item>
+                <item name="multishipping" xsi:type="string">multishipping_checkout_*</item>
+            </argument>
+        </arguments>
+    </type>
+    <!-- The widget in the <head> of storefronts that do not render Magento's layout (ScandiPWA). -->
+    <type name="Magento\Framework\View\Result\Layout">
+        <plugin name="askmerra_add_widget_to_head" type="AskMerra\Connector\Plugin\View\AddWidgetToHead" sortOrder="-5"/>
+    </type>
+</config>

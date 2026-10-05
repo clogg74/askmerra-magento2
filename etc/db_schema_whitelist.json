@@ -1,0 +1,56 @@
+{
+    "askmerra_queue": {
+        "column": {
+            "queue_id": true,
+            "store_id": true,
+            "product_id": true,
+            "attempts": true,
+            "available_at": true,
+            "created_at": true,
+            "last_error": true
+        },
+        "index": {
+            "ASKMERRA_QUEUE_STORE_ID_ATTEMPTS_AVAILABLE_AT": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "ASKMERRA_QUEUE_STORE_ID_PRODUCT_ID": true,
+            "ASKMERRA_QUEUE_STORE_ID_STORE_STORE_ID": true
+        }
+    },
+    "askmerra_product_state": {
+        "column": {
+            "store_id": true,
+            "product_id": true,
+            "external_id": true,
+            "locale": true,
+            "payload_hash": true,
+            "in_stock": true,
+            "payload": true,
+            "synced_at": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "ASKMERRA_PRODUCT_STATE_STORE_ID_STORE_STORE_ID": true
+        }
+    },
+    "askmerra_sync_run": {
+        "column": {
+            "run_id": true,
+            "store_id": true,
+            "type": true,
+            "status": true,
+            "started_at": true,
+            "finished_at": true,
+            "stats": true,
+            "message": true
+        },
+        "index": {
+            "ASKMERRA_SYNC_RUN_STORE_ID_TYPE_STARTED_AT": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "ASKMERRA_SYNC_RUN_STORE_ID_STORE_STORE_ID": true
+        }
+    }
+}
