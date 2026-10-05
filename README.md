@@ -130,10 +130,16 @@ Store views in the same currency but another language can share a shop: each sen
 - **Removals** - products that are deleted, disabled, hidden, out of stock (when excluded) or moved
   out of the website are removed from AskMerra; the daily check also catches products that left the
   catalog in ways no trigger saw.
-- **Failures** - a product AskMerra rejects is marked failed with AskMerra's message (status page);
-  passing errors are retried with growing pauses (1 minute ... 6 hours); a rate limit waits as long as
-  AskMerra asks; a request too large is split; a refused key pauses the store view, shows an admin
-  warning and resumes by itself once the key works.
+- **Failures** - every kind of failure is handled and recovers by itself:
+  - a product AskMerra rejects is marked failed with AskMerra's message (status page), as is a
+    product too large to send or one with the same SKU as another product AskMerra has;
+  - when AskMerra does not answer, the store view pauses with growing pauses (1 minute ... 6 hours)
+    and resumes by itself, without giving up on any product;
+  - a rate limit pauses the store view as long as AskMerra asks; a request too large is split;
+  - a refused key pauses the store view, shows an admin warning and resumes by itself once the key
+    works;
+  - a product edited while it is being sent is sent again with the edit; an old copy (another id or
+    language) is removed before the new one is recorded, and never when another product has that id.
 - **Feed safety** - AskMerra deactivates every product missing from a feed, so a store view's first
   feed is written only once its whole catalog is ready, and a file is never published with products
   missing.
@@ -141,6 +147,11 @@ Store views in the same currency but another language can share a shop: each sen
   noticed within a minute; the whole catalog is sent again the new way, the new feed is published
   once complete, and the feed file of a store view that no longer uses a feed is deleted. Remove the
   source you no longer use in the AskMerra dashboard.
+- **A new key or store settings** - a new secret key or API URL (from a test shop to the live one,
+  say) sends the whole catalog to the new AskMerra shop. A change to the locale, currencies, base
+  URLs, URL suffix or tax display of a store view rebuilds its catalog within a minute, and only the
+  products it changed are sent. Both are noticed however the configuration changes (admin,
+  `config:set`, a deployed `config.php`).
 
 Measured on a 1,145-product catalog: building and comparing every product takes about 2 seconds; a
 feed file is written from stored entries in 0.3 seconds; the stock check takes 0.06 seconds.

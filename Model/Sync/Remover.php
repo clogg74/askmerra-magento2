@@ -30,20 +30,27 @@ class Remover
 
     /**
      * @return int products removed
-     * @throws ApiException when AskMerra cannot be reached; what was removed so far stays removed
+     * @throws ApiException when AskMerra cannot be reached, or there is no secret key; what was
+     *         removed so far stays removed
      */
     public function removeAll(int $storeId): int
     {
+        if ($this->config->getSecretKey($storeId) === '' && $this->state->count($storeId) > 0) {
+            // Only the Push API removes products; forgetting them here would leave them in AskMerra for good.
+            throw new ApiException(
+                (string) __('Nothing was removed: AskMerra removes products only with the secret key. Enter it for this store view under Stores > Configuration > AskMerra (AskMerra can stay turned off), then try again.'),
+                401,
+                'missing_api_key',
+                ''
+            );
+        }
+
         $runId = $this->runLog->start($storeId, RunLog::TYPE_REMOVE_ALL);
-        $canPush = $this->config->getSecretKey($storeId) !== '';
         $removed = 0;
 
         try {
             while ($rows = $this->state->getPage($storeId, 0, 1000)) {
-                if ($canPush) {
-                    $this->queueProcessor->deleteRemote($storeId, $rows);
-                }
-
+                $this->queueProcessor->deleteRemote($storeId, $rows);
                 $this->state->delete($storeId, array_column($rows, 'product_id'));
                 $removed += count($rows);
             }

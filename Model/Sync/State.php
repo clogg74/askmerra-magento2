@@ -47,6 +47,43 @@ class State
     }
 
     /**
+     * The products a store view has in AskMerra under these ids, in any language.
+     *
+     * @param string[] $externalIds
+     * @return array<int, array{product_id: int, external_id: string, locale: ?string}> by product id
+     */
+    public function getByExternalIds(int $storeId, array $externalIds): array
+    {
+        $result = [];
+
+        foreach (array_chunk(array_values(array_unique(array_map('strval', $externalIds))), 500) as $chunk) {
+            $wanted = array_flip($chunk);
+            $rows = $this->connection()->fetchAll(
+                $this->connection()->select()
+                    ->from($this->table(), ['product_id', 'external_id', 'locale'])
+                    ->where('store_id = ?', $storeId)
+                    ->where('external_id IN (?)', $chunk)
+            );
+
+            foreach ($rows as $row) {
+                // The column ignores case and trailing spaces; AskMerra's ids do not.
+                if (!isset($wanted[(string) $row['external_id']])) {
+                    continue;
+                }
+
+                $productId = (int) $row['product_id'];
+                $result[$productId] = [
+                    'product_id' => $productId,
+                    'external_id' => (string) $row['external_id'],
+                    'locale' => $row['locale'] === null ? null : (string) $row['locale'],
+                ];
+            }
+        }
+
+        return $result;
+    }
+
+    /**
      * Records products as sent or rebuilt now.
      *
      * @param array[] $rows each: product_id, external_id, locale, payload_hash, in_stock, and payload

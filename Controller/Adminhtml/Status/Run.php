@@ -80,7 +80,19 @@ class Run extends Action implements HttpPostActionInterface
             return;
         }
 
-        $done = $stats[$storeId] ?? ['sent' => 0, 'unchanged' => 0, 'removed' => 0, 'failed' => 0];
+        $done = ($stats[$storeId] ?? []) + ['sent' => 0, 'unchanged' => 0, 'removed' => 0, 'failed' => 0];
+        $pending = $this->queue->countPending($storeId);
+
+        if (array_sum($done) === 0 && $pending > 0) {
+            // Paused (rate limit, AskMerra not answering, key refused) or waiting to be tried again.
+            $this->messageManager->addWarningMessage(__(
+                'Nothing could be sent right now: AskMerra asked to wait, did not answer or refused the key. %1 products wait and are sent automatically; the latest errors are listed below.',
+                $pending
+            ));
+
+            return;
+        }
+
         $this->messageManager->addSuccessMessage(__(
             'Sent or updated: %1, unchanged: %2, removed: %3, failed: %4.',
             $done['sent'],
@@ -88,8 +100,6 @@ class Run extends Action implements HttpPostActionInterface
             $done['removed'],
             $done['failed']
         ));
-
-        $pending = $this->queue->countPending($storeId);
 
         if ($pending > 0) {
             $this->messageManager->addNoticeMessage(__('%1 products are still waiting; cron continues with them.', $pending));

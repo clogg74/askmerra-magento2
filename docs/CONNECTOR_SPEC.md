@@ -159,8 +159,8 @@ with a name. An ineligible product that AskMerra has is removed.
 
 | Table | Columns | Purpose |
 | --- | --- | --- |
-| queue | storefront, product, attempts, available_at (UTC), created_at, last_error; unique (storefront, product) | Products to build and send. A product queued again stays one row, is due at once, and its attempts start over |
-| state | storefront, product, external_id, locale, payload_hash, in_stock, payload (feed entry, compressed), synced_at; PK (storefront, product) | What AskMerra has. Outlives the product (needed to delete it) |
+| queue | storefront, product, attempts, available_at (UTC), created_at, last_error, revision; unique (storefront, product) | Products to build and send. A product queued again stays one row, is due at once, its attempts start over and its revision counts up: a run removes or updates only the rows it fetched, unchanged, so an edit made while the product was being sent is not lost |
+| state | storefront, product, external_id, locale, payload_hash, in_stock, payload (feed entry, compressed), synced_at; PK (storefront, product); index (storefront, external_id) | What AskMerra has. Outlives the product (needed to delete it) |
 | run log | storefront, type (rebuild, reconcile, feed, remove_all), status, started/finished, stats JSON, message | Status page history (30 days) |
 
 ### 5.2 Change detection
@@ -178,7 +178,11 @@ with a name. An ineligible product that AskMerra has is removed.
    today).
 4. **Catalog rule full reindex**: snapshot guest rule prices before and after; queue the differences.
 5. **Full rebuild** (weekly by default, on settings changes, by hand): queue every candidate plus
-   everything in the state.
+   everything in the state. Each storefront also keeps what its catalog was built for - the sync
+   method, the destination (a keyed hash of API URL + secret key, never the key) and a hash of the
+   shop settings every product shows (locale, currencies, base URLs, URL suffix, tax display) - and
+   rebuilds when one changes, however the setting was changed. A new destination invalidates the
+   state first, so the whole catalog reaches the new AskMerra shop.
 6. **Bulk "send now"** from the products grid, **send this product** from the preview, CLI `--product`.
 
 ### 5.3 Processing (cron every minute, up to 50 seconds, one runner at a time via a lock)
@@ -191,25 +195,31 @@ for storefront in round_robin(syncing storefronts) until time is up or nothing i
         hash = sha1(json(payload without source_updated_at))
         if state[id] has same hash, external_id and locale: drop from queue (unchanged)
         else: changed
+    claim ids: one external_id per product - a product AskMerra has under its id keeps it; a product
+                      taking an id another product of the batch takes, or that a product still
+                      holding it has in the state, fails for good ("same SKU as product N")
+    ineligible ids that are in the state (first, so an id they free can be taken in this batch):
+                      push -> batchDelete the copies no other product has (grouped by locale);
+                      feed -> mark changed; delete from state
     push storefront:  batchUpsert(changed) in chunks <= 500 products and <= 9.5 MB
                       -> rejected (errors[index]) = failed for good, with AskMerra's message
-                      -> others saved to state, dropped from queue
-                      -> if id or locale changed: batchDelete the old copy
-    feed storefront:  save each changed payload JSON (compressed) in the state; mark feed changed
-    ineligible ids that are in the state: push -> batchDelete (grouped by locale); feed -> mark
-                      changed; delete from state
+                      -> if id or locale changed: batchDelete the old copy (unless another product
+                         has it) BEFORE saving the new state; if that fails, the product stays
+                         queued with its old state
+                      -> saved to state, dropped from queue
+    feed storefront:  mark feed changed, then save each changed payload JSON (compressed) in the state
 ```
 
 ### 5.4 Errors
 
 | Case | Handling |
 | --- | --- |
-| No answer, timeout, 408, 5xx | Retry: pause 60 s x 2^attempts (max 6 h), attempts + 1; failed after 8 |
-| 429 | Pause for `Retry-After` (default 60 s); attempts unchanged |
-| 413 | Split the chunk in halves and retry; single product too large -> failed |
-| 401 / 403 / 404 | Store a "key refused" problem for the storefront (admin warning), pause 10 minutes, attempts unchanged. Cleared by the next successful call |
+| No answer, timeout, 408, 5xx | An outage: pause the whole storefront (every waiting row) 60 s x 2^(outages in a row) (max 6 h), attempts unchanged; the count resets with the next successful call. The storefront is skipped for the rest of the run |
+| 429 | Pause the whole storefront for `Retry-After` (default 60 s); attempts unchanged; skipped for the rest of the run |
+| 413 | Split the chunk in halves and retry; a single product too large on its own -> failed for good, the others are sent |
+| 401 / 403 / 404 | Store a "key refused" problem for the storefront (admin warning), pause the whole storefront 10 minutes, attempts unchanged; skipped for the rest of the run. Cleared by the next successful call |
 | Product in `errors[]` | Failed for good with AskMerra's message; retried when the product changes or by "Retry failed" |
-| Product cannot be built | Retry with the pauses above |
+| Product cannot be built, other request errors | Retry: pause 60 s x 2^attempts (max 6 h), attempts + 1; failed after 8 |
 
 Failed products stay listed on the status page with the error and a link to the product.
 
@@ -244,7 +254,8 @@ an old feed delivered.
 
 "Remove from AskMerra" (only once the storefront no longer syncs, otherwise the daily check sends it
 back): batchDelete everything in the state (by locale, 1,000 per call), clear queue and state, delete
-feed files. A feed source must also be deleted in the AskMerra dashboard.
+feed files. Refused without a secret key while the state holds products - forgetting them would leave
+them in AskMerra for good. A feed source must also be deleted in the AskMerra dashboard.
 
 ## 6. Storefront
 

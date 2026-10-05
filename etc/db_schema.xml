@@ -10,6 +10,7 @@
         <column xsi:type="datetime" name="available_at" nullable="false" comment="Not sent before (UTC)"/>
         <column xsi:type="datetime" name="created_at" nullable="false" comment="Queued at (UTC)"/>
         <column xsi:type="text" name="last_error" nullable="true" comment="Last error"/>
+        <column xsi:type="int" name="revision" unsigned="true" nullable="false" default="0" comment="Counted up when queued again"/>
         <constraint xsi:type="primary" referenceId="PRIMARY">
             <column name="queue_id"/>
         </constraint>
@@ -51,6 +52,11 @@
         <constraint xsi:type="foreign" referenceId="ASKMERRA_PRODUCT_STATE_STORE_ID_STORE_STORE_ID"
                     table="askmerra_product_state" column="store_id" referenceTable="store" referenceColumn="store_id"
                     onDelete="CASCADE"/>
+        <!-- Which product has an external id: one id belongs to one product (Sync\QueueProcessor). -->
+        <index referenceId="ASKMERRA_PRODUCT_STATE_STORE_ID_EXTERNAL_ID" indexType="btree">
+            <column name="store_id"/>
+            <column name="external_id"/>
+        </index>
     </table>
 
     <!-- Full syncs, feed generations and removals, for the status page. -->

@@ -89,6 +89,7 @@ class Reconciler
         $gone = array_diff($this->state->getProductIds($storeId), $candidates);
 
         $queued = $this->queue->add([$storeId], array_merge($candidates, $gone));
+        $this->methodTracker->rebuilt($storeId);
 
         $this->runLog->finish($runId, RunLog::STATUS_SUCCESS, ['queued' => $queued]);
 

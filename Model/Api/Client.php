@@ -21,7 +21,7 @@ use Magento\Framework\HTTP\Client\CurlFactory;
  */
 class Client
 {
-    public const VERSION = '1.0.0';
+    public const VERSION = '1.0.1';
 
     /** Largest upsert body we send; AskMerra refuses more than 10 MB. */
     public const MAX_UPSERT_BYTES = 9_500_000;

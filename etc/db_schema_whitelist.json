@@ -7,7 +7,8 @@
             "attempts": true,
             "available_at": true,
             "created_at": true,
-            "last_error": true
+            "last_error": true,
+            "revision": true
         },
         "index": {
             "ASKMERRA_QUEUE_STORE_ID_ATTEMPTS_AVAILABLE_AT": true
@@ -32,6 +33,9 @@
         "constraint": {
             "PRIMARY": true,
             "ASKMERRA_PRODUCT_STATE_STORE_ID_STORE_STORE_ID": true
+        },
+        "index": {
+            "ASKMERRA_PRODUCT_STATE_STORE_ID_EXTERNAL_ID": true
         }
     },
     "askmerra_sync_run": {
